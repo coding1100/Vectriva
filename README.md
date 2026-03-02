@@ -15,8 +15,10 @@ Vectriva enables businesses to deploy intelligent, product-trained AI agents cap
 ## Technology Stack
 
 - **Backend**: Python 3.12+, FastAPI
-- **Agent**: LangGraph, LangChain, OpenAI
-- **Database**: PostgreSQL + pgvector
+- **Agent**: LangGraph, LangChain
+- **LLM**: OpenAI GPT-4o / Google Gemini 1.5 (tenant-configurable)
+- **Embeddings**: OpenAI / Gemini (tenant-configurable)
+- **Database**: PostgreSQL
 - **Cache**: Redis
 - **Task Queue**: Celery
 - **Auth**: Custom JWT + OAuth2
@@ -48,7 +50,11 @@ uv pip install -e .
 3. Set up environment variables:
 ```bash
 cp .env.example .env
-# Edit .env with your credentials
+# Edit .env with your API keys:
+# - GEMINI_API_KEY (required, from https://aistudio.google.com/app/apikey)
+# - OPENAI_API_KEY (optional)
+# - GOOGLE_CLIENT_ID/SECRET (for Calendar)
+# - JWT_SECRET_KEY (change default!)
 ```
 
 4. Initialize database:

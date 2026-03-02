@@ -10,6 +10,7 @@ from .chat import router as chat_router
 from .conversations import router as conversations_router
 from .documents import router as documents_router
 from .integrations import router as integrations_router
+from .models import router as models_router
 from .tenants import router as tenants_router
 
 structlog.configure(
@@ -41,6 +42,7 @@ app.include_router(documents_router, prefix="/api")
 app.include_router(integrations_router, prefix="/api")
 app.include_router(conversations_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
+app.include_router(models_router, prefix="/api")
 
 
 @app.get("/health")

@@ -138,7 +138,7 @@ async def get_document_chunks(
             id=chunk.id,
             content=chunk.content,
             chunk_type=chunk.chunk_type,
-            metadata=chunk.metadata,
+            metadata=chunk.chunk_metadata,
         )
         for chunk in chunks
     ]

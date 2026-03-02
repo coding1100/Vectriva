@@ -7,7 +7,6 @@ Create Date: 2026-03-02
 """
 from alembic import op
 import sqlalchemy as sa
-from pgvector.sqlalchemy import Vector
 
 revision = '001'
 down_revision = None
@@ -16,7 +15,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.execute('CREATE EXTENSION IF NOT EXISTS vector')
+    pass
     
     op.create_table(
         'users',
@@ -62,6 +61,10 @@ def upgrade() -> None:
         sa.Column('persona_name', sa.String(), nullable=False, server_default='Assistant'),
         sa.Column('tone', sa.Enum('professional', 'friendly', 'casual', name='tone_type'), server_default='professional'),
         sa.Column('custom_instructions', sa.Text(), server_default=''),
+        sa.Column('llm_provider', sa.Enum('openai', 'gemini', name='llm_provider'), server_default='gemini'),
+        sa.Column('llm_model', sa.String(), server_default='gemini-1.5-pro'),
+        sa.Column('embedding_provider', sa.Enum('openai', 'gemini', name='embedding_provider'), server_default='gemini'),
+        sa.Column('embedding_model', sa.String(), server_default='models/text-embedding-004'),
         sa.Column('business_hours', sa.JSON(), server_default='[]'),
         sa.Column('auto_escalate_on_failure_count', sa.Integer(), server_default='3'),
         sa.Column('auto_escalate_on_negative_sentiment', sa.Boolean(), server_default='true'),
@@ -100,8 +103,9 @@ def upgrade() -> None:
         sa.Column('tenant_id', sa.String(), nullable=False),
         sa.Column('content', sa.Text(), nullable=False),
         sa.Column('chunk_type', sa.Enum('text', 'table', 'image_caption', name='chunk_type'), nullable=False),
-        sa.Column('embedding', Vector(1536), nullable=False),
-        sa.Column('metadata', sa.JSON(), server_default='{}'),
+        sa.Column('embedding', sa.LargeBinary(), nullable=False),
+        sa.Column('embedding_dimension', sa.Integer(), nullable=False),
+        sa.Column('chunk_metadata', sa.JSON(), server_default='{}'),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.ForeignKeyConstraint(['document_id'], ['documents.id']),
         sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id']),
@@ -109,7 +113,6 @@ def upgrade() -> None:
     )
     op.create_index('ix_document_chunks_document_id', 'document_chunks', ['document_id'])
     op.create_index('ix_document_chunks_tenant_id', 'document_chunks', ['tenant_id'])
-    op.execute('CREATE INDEX idx_chunks_tenant_embedding ON document_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)')
     
     op.create_table(
         'conversations',
@@ -132,7 +135,7 @@ def upgrade() -> None:
         sa.Column('conversation_id', sa.String(), nullable=False),
         sa.Column('role', sa.String(), nullable=False),
         sa.Column('content', sa.Text(), nullable=False),
-        sa.Column('metadata', sa.JSON(), server_default='{}'),
+        sa.Column('message_metadata', sa.JSON(), server_default='{}'),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.ForeignKeyConstraint(['conversation_id'], ['conversations.id']),
         sa.PrimaryKeyConstraint('id')
@@ -265,7 +268,6 @@ def downgrade() -> None:
     op.drop_index('ix_conversations_tenant_id', table_name='conversations')
     op.drop_table('conversations')
     
-    op.execute('DROP INDEX IF EXISTS idx_chunks_tenant_embedding')
     op.drop_index('ix_document_chunks_tenant_id', table_name='document_chunks')
     op.drop_index('ix_document_chunks_document_id', table_name='document_chunks')
     op.drop_table('document_chunks')
@@ -279,5 +281,3 @@ def downgrade() -> None:
     
     op.drop_index('ix_users_email', table_name='users')
     op.drop_table('users')
-    
-    op.execute('DROP EXTENSION IF EXISTS vector')

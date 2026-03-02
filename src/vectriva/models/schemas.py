@@ -78,6 +78,10 @@ class TenantConfigResponse(BaseModel):
     persona_name: str
     tone: Literal["professional", "friendly", "casual"]
     custom_instructions: str
+    llm_provider: Literal["openai", "gemini"]
+    llm_model: str
+    embedding_provider: Literal["openai", "gemini"]
+    embedding_model: str
     timezone: str
     business_hours: list[BusinessHourBlock]
     auto_escalate_on_failure_count: int
@@ -94,6 +98,10 @@ class UpdateTenantConfigRequest(BaseModel):
     persona_name: str | None = None
     tone: Literal["professional", "friendly", "casual"] | None = None
     custom_instructions: str | None = None
+    llm_provider: Literal["openai", "gemini"] | None = None
+    llm_model: str | None = None
+    embedding_provider: Literal["openai", "gemini"] | None = None
+    embedding_model: str | None = None
     business_hours: list[BusinessHourBlock] | None = None
     auto_escalate_on_failure_count: int | None = None
     auto_escalate_on_negative_sentiment: bool | None = None

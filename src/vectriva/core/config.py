@@ -22,10 +22,21 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     redis_context_ttl_seconds: int = 86400  # 24 hours
 
+    # LLM Provider (default)
+    default_llm_provider: str = "gemini"  # "openai" or "gemini"
+    default_llm_model: str = "gemini-1.5-pro"
+    default_embedding_provider: str = "gemini"  # "openai" or "gemini"
+    default_embedding_model: str = "models/text-embedding-004"
+
     # OpenAI
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
     openai_embedding_model: str = "text-embedding-3-small"
+
+    # Gemini (Google AI)
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-1.5-pro"
+    gemini_embedding_model: str = "models/text-embedding-004"
 
     # Google Calendar
     google_client_id: str = ""

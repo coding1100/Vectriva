@@ -31,12 +31,22 @@ cp .env.example .env
 
 Edit `.env` and set:
 ```bash
-# Required
-OPENAI_API_KEY=sk-your-openai-key
+# Required - Choose at least one provider
+GEMINI_API_KEY=your-gemini-api-key  # Get from https://aistudio.google.com/app/apikey
+# OR
+OPENAI_API_KEY=sk-your-openai-key   # Get from https://platform.openai.com/api-keys
+
+# Model defaults (Gemini recommended)
+DEFAULT_LLM_PROVIDER=gemini
+DEFAULT_LLM_MODEL=gemini-1.5-pro
+DEFAULT_EMBEDDING_PROVIDER=gemini
+DEFAULT_EMBEDDING_MODEL=models/text-embedding-004
+
+# Google Calendar (required for booking)
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 
-# Security (change these!)
+# Security (CHANGE THESE!)
 JWT_SECRET_KEY=your-random-secret-key-32-chars-minimum
 ENCRYPTION_MASTER_KEY=your-32-byte-encryption-key-change-this!
 
@@ -81,6 +91,20 @@ alembic upgrade head
 ```
 
 This creates all 13 tables with proper indexes and constraints.
+
+### Verify Database Integration
+```bash
+python scripts/verify_db.py
+```
+
+Expected output: list of tables (users, tenants, tenant_configs, documents, etc.)
+
+**pgAdmin**: Connect to `127.0.0.1:5433` (not 5432). Navigate: **Databases → vectriva → Schemas → public → Tables**. Right-click Tables → Refresh if empty.
+
+### Seed Initial Data (Optional)
+1. **Register user**: `POST /api/auth/register` with `{"email": "admin@example.com", "password": "your-password"}`
+2. **Create tenant** (use token from step 1): `POST /api/tenants` with `{"name": "My Company", "timezone": "UTC"}`, header `Authorization: Bearer <access_token>`
+3. **Create API key** for chat: `POST /api/tenants/{tenant_id}/api-keys` with `{"name": "Chat Key"}`
 
 ## Step 4: Start the Server
 

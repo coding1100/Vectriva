@@ -3,7 +3,6 @@
 from datetime import datetime
 from typing import Any
 
-from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -19,6 +18,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import DeclarativeBase, relationship
 
 
@@ -93,6 +93,12 @@ class TenantConfig(Base):
     tone = Column(Enum("professional", "friendly", "casual", name="tone_type"), default="professional")
     custom_instructions = Column(Text, default="")
 
+    # Model Configuration
+    llm_provider = Column(Enum("openai", "gemini", name="llm_provider"), default="gemini")
+    llm_model = Column(String, default="gemini-1.5-pro")
+    embedding_provider = Column(Enum("openai", "gemini", name="embedding_provider"), default="gemini")
+    embedding_model = Column(String, default="models/text-embedding-004")
+
     # Business Hours (stored as JSON)
     business_hours = Column(JSON, default=list)
 
@@ -148,13 +154,14 @@ class DocumentChunk(Base):
     chunk_type = Column(
         Enum("text", "table", "image_caption", name="chunk_type"), nullable=False
     )
-    embedding = Column(Vector(1536), nullable=False)
-    metadata = Column(JSON, default=dict)
+    embedding = Column(BYTEA, nullable=False)
+    embedding_dimension = Column(Integer, nullable=False)
+    chunk_metadata = Column(JSON, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     document = relationship("Document", back_populates="chunks")
 
-    __table_args__ = (Index("idx_chunks_tenant_embedding", "tenant_id", "embedding"),)
+    __table_args__ = (Index("idx_chunks_tenant_id", "tenant_id"),)
 
 
 class Conversation(Base):
@@ -187,7 +194,7 @@ class ConversationMessage(Base):
     conversation_id = Column(String, ForeignKey("conversations.id"), nullable=False, index=True)
     role = Column(String, nullable=False)
     content = Column(Text, nullable=False)
-    metadata = Column(JSON, default=dict)
+    message_metadata = Column(JSON, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     conversation = relationship("Conversation", back_populates="messages")
