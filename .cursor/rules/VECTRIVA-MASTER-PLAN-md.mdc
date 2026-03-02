@@ -1,0 +1,518 @@
+---
+alwaysApply: true
+---
+
+Vectriva
+Production-Grade Agentic Multimodal RAG SaaS Platform
+1. Product Vision
+
+Vectriva is a production-level SaaS platform that enables businesses to create intelligent, product-trained, agentic chatbots capable of:
+
+Understanding product documentation
+
+Performing multimodal RAG (text, tables, images, Excel)
+
+Guiding customers conversationally
+
+Recommending products
+
+Booking appointments via Google Calendar
+
+Automatically generating Google Meet links
+
+Operating in a secure multi-tenant SaaS environment
+
+Vectriva is not just a chatbot tool — it is an AI Agent Infrastructure Platform for product-centric businesses.
+
+2. Core Product Capabilities
+2.1 Product Knowledge Intelligence
+
+Each tenant can upload:
+
+PDFs
+
+Product manuals
+
+Excel files
+
+Pricing sheets
+
+Tables
+
+Product catalogs
+
+Images with descriptions
+
+Website exports
+
+Vectriva processes and transforms these into a multi-vector retrieval system so the agent can:
+
+Answer factual questions
+
+Compare products
+
+Extract pricing
+
+Interpret tables
+
+Reference images
+
+Use structured knowledge
+
+2.2 Agentic Workflow Capabilities
+
+Vectriva agents can:
+
+Answer product questions
+
+Detect buying intent
+
+Recommend relevant products
+
+Check calendar availability
+
+Book appointments
+
+Reschedule appointments
+
+Cancel appointments
+
+Escalate to human when needed
+
+The agent uses deterministic workflow orchestration to avoid hallucinated tool usage.
+
+2.3 SaaS Capabilities
+
+Multi-tenant isolation
+
+Role-based access control
+
+Usage metering
+
+API key support
+
+Embeddable chatbot widget
+
+Admin dashboard
+
+Conversation history
+
+Tool usage logs
+
+RAG retrieval logs
+
+Observability and tracing
+
+3. Technology Stack
+3.1 Backend
+
+Python 3.12+
+
+FastAPI (async API layer)
+
+LangChain (retrieval, tool abstraction, embeddings)
+
+LangGraph (agentic workflow orchestration)
+
+OpenAI Responses API (LLM + tool calling)
+
+PostgreSQL (primary database)
+
+pgvector (vector storage)
+
+Redis (caching + rate limiting)
+
+Celery or equivalent async task queue (document ingestion)
+
+3.2 Database Strategy
+Primary Database
+
+PostgreSQL serves as:
+
+Tenant store
+
+User management
+
+OAuth tokens
+
+Conversation logs
+
+Usage tracking
+
+Billing metadata
+
+Embeddings via pgvector
+
+Vector Strategy (Phase 1)
+
+pgvector with IVF index
+
+Multi-vector storage per document
+
+Metadata filtering by tenant
+
+Vector Strategy (Phase 2 – Scale Upgrade)
+
+Migrate heavy retrieval workloads to Qdrant
+
+Keep Postgres for transactional data
+
+3.3 Multimodal RAG Architecture
+
+Vectriva uses a Multi-Vector Retrieval Pattern:
+
+Each document produces multiple vectors:
+
+Text chunks
+
+Table summaries
+
+Image captions
+
+Structured summaries of Excel sheets
+
+Each vector is stored independently but linked to a parent document.
+
+Retrieval Flow:
+
+User query embedding generated
+
+Vector similarity search filtered by tenant
+
+Top-K vectors retrieved
+
+Parent context reconstructed
+
+Context passed to LLM
+
+This ensures:
+
+Fine-grained semantic matching
+
+Accurate table retrieval
+
+Image-aware answers
+
+Reduced hallucination
+
+3.4 Agentic Layer
+
+LangGraph orchestrates deterministic state transitions.
+
+The agent is not a free-form loop. It is a structured graph.
+
+4. Agentic Workflow Architecture
+4.1 High-Level Agent States
+
+Intent Detection
+
+Knowledge Retrieval
+
+Product Guidance
+
+Recommendation Logic
+
+Booking Flow
+
+Confirmation
+
+Human Escalation
+
+4.2 Conversational Product Flow
+
+User → Query
+↓
+Intent Classification
+↓
+If informational → RAG Retrieval → Response
+If comparison → Structured RAG → Response
+If buying intent → Recommendation Node
+If booking intent → Booking Workflow
+
+4.3 Appointment Booking Workflow (Deterministic)
+
+State 1: Detect Booking Intent
+State 2: Extract Date/Time Preferences
+State 3: Call Availability Tool
+State 4: Offer Available Slots
+State 5: Confirm Slot
+State 6: Create Calendar Event
+State 7: Generate Google Meet Link
+State 8: Return Confirmation
+
+Safety Features:
+
+Strict tool schemas
+
+Server-side parameter validation
+
+Retry logic
+
+Timezone normalization
+
+Tenant-specific calendar mapping
+
+4.4 Tooling Layer
+
+Tools exposed to the agent:
+
+Check Availability
+
+Create Event
+
+Reschedule Event
+
+Cancel Event
+
+Retrieve Product Data
+
+Escalate to Human
+
+Each tool:
+
+Validates inputs server-side
+
+Logs usage
+
+Enforces tenant isolation
+
+5. Google Calendar & Meet Integration
+
+Authentication Strategy:
+
+OAuth per tenant user (recommended for SaaS)
+
+Secure refresh token storage
+
+Scoped access for Calendar events
+
+When booking:
+
+Create event via Calendar API
+
+Include conference data
+
+Automatically attach Google Meet link
+
+Store event metadata in Vectriva DB
+
+6. SaaS Multi-Tenant Architecture
+6.1 Tenant Isolation
+
+Each record includes:
+
+tenant_id
+
+user_id (where applicable)
+
+Row-Level Security enforced at database layer.
+
+This prevents cross-tenant data leakage.
+
+6.2 Tenant Resources
+
+Each tenant has:
+
+Document library
+
+Embedding namespace
+
+Conversation history
+
+OAuth tokens
+
+API keys
+
+Usage metrics
+
+7. Frontend Architecture
+7.1 Admin Dashboard (Next.js)
+
+Features:
+
+Upload documents
+
+View ingestion status
+
+Connect Google Calendar
+
+Configure chatbot tone
+
+Monitor conversations
+
+View analytics
+
+Manage API keys
+
+7.2 Chat Widget
+
+Embeddable script for customers:
+
+Streaming responses
+
+Typing indicators
+
+Structured response rendering
+
+Booking UI
+
+Multi-step confirmation
+
+8. DevOps & CI/CD Strategy
+8.1 Version Control
+
+GitHub repository:
+
+Backend
+
+Frontend
+
+Infrastructure
+
+Deployment configs
+
+8.2 CI Pipeline (GitHub Actions)
+
+Stages:
+
+Lint
+
+Type checking
+
+Unit testing
+
+Integration testing
+
+Docker build
+
+Image push
+
+Deploy
+
+AI-Specific Tests:
+
+Tool contract validation
+
+Embedding dimension consistency
+
+Prompt regression validation
+
+Migration testing
+
+8.3 Deployment Strategy
+
+Phase 1:
+
+Dockerized services
+
+Single production cluster
+
+Managed PostgreSQL
+
+Managed Redis
+
+Phase 2:
+
+Kubernetes
+
+Horizontal autoscaling
+
+Read replicas
+
+Observability stack
+
+9. Observability & Monitoring
+
+Track:
+
+LLM latency
+
+Tool call frequency
+
+Retrieval accuracy
+
+Vector search latency
+
+Booking success rate
+
+Token usage per tenant
+
+Error rates
+
+Add:
+
+Structured logging
+
+Request tracing
+
+Tool execution logs
+
+RAG retrieval audit logs
+
+10. Security Model
+
+OAuth token encryption at rest
+
+API rate limiting
+
+Tenant-level access controls
+
+Input sanitization
+
+Prompt injection mitigation
+
+Tool parameter validation
+
+Audit logs
+
+11. Future Expansion Capabilities
+
+Vectriva is designed to support:
+
+CRM integrations
+
+Payment integrations
+
+WhatsApp / Slack agents
+
+Voice agents
+
+Multi-language support
+
+Custom model selection per tenant
+
+Hybrid retrieval (vector + keyword)
+
+12. Long-Term Vision
+
+Vectriva becomes:
+
+The infrastructure layer for product-trained AI agents
+
+A plug-and-play SaaS for intelligent customer engagement
+
+A platform where businesses deploy AI agents as easily as installing analytics
+
+Summary
+
+Vectriva is:
+
+Agentic
+
+Multimodal
+
+Multi-tenant
+
+Scalable
+
+Secure
+
+Infrastructure-ready
+
+It combines:
+
+LangChain + LangGraph
+Postgres + pgvector
+Google Calendar integration
+Deterministic agent workflows
+Production DevOps discipline
