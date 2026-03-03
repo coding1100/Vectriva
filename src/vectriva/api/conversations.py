@@ -23,7 +23,7 @@ from ..models.schemas import (
 )
 from .middleware import get_current_tenant
 
-router = APIRouter(prefix="/conversations", tags=["conversations"])
+router = APIRouter(prefix="/tenants/{tenant_id}/conversations", tags=["conversations"])
 
 
 @router.get("", response_model=ConversationListResponse)

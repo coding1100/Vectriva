@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     redis_context_ttl_seconds: int = 86400  # 24 hours
 
+    # Celery
+    celery_broker_url: str = "redis://localhost:6379/1"
+
     # LLM Provider (default)
     default_llm_provider: str = "gemini"  # "openai" or "gemini"
     default_llm_model: str = "gemini-1.5-pro"

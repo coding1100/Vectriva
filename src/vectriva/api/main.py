@@ -9,6 +9,7 @@ from .auth import router as auth_router
 from .chat import router as chat_router
 from .conversations import router as conversations_router
 from .documents import router as documents_router
+from .integrations import callback_router as integrations_callback_router
 from .integrations import router as integrations_router
 from .models import router as models_router
 from .tenants import router as tenants_router
@@ -39,6 +40,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(tenants_router, prefix="/api")
 app.include_router(documents_router, prefix="/api")
+app.include_router(integrations_callback_router, prefix="/api")
 app.include_router(integrations_router, prefix="/api")
 app.include_router(conversations_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")

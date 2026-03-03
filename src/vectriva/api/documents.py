@@ -1,5 +1,6 @@
 """Document management API endpoints."""
 
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -14,7 +15,7 @@ from ..models.database import Document, DocumentChunk, Tenant
 from ..models.schemas import DocumentChunkResponse, DocumentResponse, DocumentUploadResponse
 from .middleware import get_current_tenant
 
-router = APIRouter(prefix="/documents", tags=["documents"])
+router = APIRouter(prefix="/tenants/{tenant_id}/documents", tags=["documents"])
 
 
 @router.post("", response_model=DocumentUploadResponse, status_code=status.HTTP_201_CREATED)
@@ -61,6 +62,12 @@ async def upload_document(
     )
     db.add(document)
     await db.commit()
+
+    try:
+        from vectriva.workers.tasks import process_document_task
+        process_document_task.delay(document_id)
+    except Exception as e:
+        logging.warning("Celery task enqueue failed (is worker running?): %s", e)
 
     return DocumentUploadResponse(
         document_id=document.id,

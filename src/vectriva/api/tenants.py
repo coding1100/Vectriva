@@ -24,6 +24,30 @@ from ..api.middleware import get_current_tenant, get_current_user
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
 
+@router.get("", response_model=list[TenantResponse])
+async def list_tenants(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[TenantResponse]:
+    """List tenants the user belongs to."""
+    result = await db.execute(
+        select(Tenant)
+        .join(TenantUser, TenantUser.tenant_id == Tenant.id)
+        .where(TenantUser.user_id == user.id, Tenant.is_active == True)
+    )
+    tenants = result.scalars().unique().all()
+    return [
+        TenantResponse(
+            id=t.id,
+            name=t.name,
+            timezone=t.timezone,
+            is_active=t.is_active,
+            created_at=t.created_at,
+        )
+        for t in tenants
+    ]
+
+
 @router.post("", response_model=TenantResponse, status_code=status.HTTP_201_CREATED)
 async def create_tenant(
     request: CreateTenantRequest,

@@ -24,7 +24,8 @@ from ..models.schemas import (
 from ..services.encryption_service import encrypt_token
 from .middleware import get_current_tenant
 
-router = APIRouter(prefix="/integrations", tags=["integrations"])
+router = APIRouter(prefix="/tenants/{tenant_id}/integrations", tags=["integrations"])
+callback_router = APIRouter(prefix="/integrations", tags=["integrations"])
 
 
 @router.get("/google/auth-url", response_model=GoogleAuthURLResponse)
@@ -57,7 +58,7 @@ async def get_google_auth_url(
     return GoogleAuthURLResponse(auth_url=auth_url, state_token=state_token)
 
 
-@router.post("/google/callback")
+@callback_router.post("/google/callback")
 async def google_callback(
     request: GoogleCallbackRequest, db: AsyncSession = Depends(get_db)
 ) -> dict[str, str]:

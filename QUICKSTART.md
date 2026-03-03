@@ -99,12 +99,19 @@ python scripts/verify_db.py
 
 Expected output: list of tables (users, tenants, tenant_configs, documents, etc.)
 
-**pgAdmin**: Connect to `127.0.0.1:5433` (not 5432). Navigate: **Databases → vectriva → Schemas → public → Tables**. Right-click Tables → Refresh if empty.
+**pgAdmin**: Connect to your PostgreSQL (port 5432 for local, 5433 if using Docker). Navigate: **Databases → vectriva → Schemas → public → Tables**. Right-click Tables → Refresh if empty.
 
-### Seed Initial Data (Optional)
-1. **Register user**: `POST /api/auth/register` with `{"email": "admin@example.com", "password": "your-password"}`
-2. **Create tenant** (use token from step 1): `POST /api/tenants` with `{"name": "My Company", "timezone": "UTC"}`, header `Authorization: Bearer <access_token>`
-3. **Create API key** for chat: `POST /api/tenants/{tenant_id}/api-keys` with `{"name": "Chat Key"}`
+### Seed Initial Data (Quick Setup)
+```bash
+python scripts/seed.py
+```
+Creates user (admin@example.com / Admin123!), tenant, and API key. Prints credentials and example curl commands.
+
+**Manual flow** (if not using seed):
+1. Register: `POST /api/auth/register`
+2. Create tenant: `POST /api/tenants` with `Authorization: Bearer <token>`
+3. Create API key: `POST /api/tenants/{tenant_id}/api-keys`
+4. List your tenants: `GET /api/tenants` with `Authorization: Bearer <token>`
 
 ## Step 4: Start the Server
 
@@ -163,16 +170,17 @@ Response includes full key (shown once):
 
 ### Upload a Document
 ```bash
-curl -X POST http://localhost:8000/api/documents \
+curl -X POST "http://localhost:8000/api/tenants/{tenant_id}/documents" \
   -H "Authorization: Bearer <access_token>" \
   -F "file=@product_manual.pdf"
 ```
+Documents are processed asynchronously by Celery. Start worker: `celery -A vectriva.workers.celery_app worker -l info`
 
 ### Connect Google Calendar
 
 1. Get OAuth URL:
 ```bash
-curl http://localhost:8000/api/integrations/google/auth-url \
+curl "http://localhost:8000/api/tenants/{tenant_id}/integrations/google/auth-url" \
   -H "Authorization: Bearer <access_token>"
 ```
 
