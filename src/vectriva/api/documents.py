@@ -29,7 +29,7 @@ async def upload_document(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No filename")
 
     file_ext = Path(file.filename).suffix.lower()
-    allowed_extensions = [".pdf", ".xlsx", ".xls", ".png", ".jpg", ".jpeg"]
+    allowed_extensions = [".pdf", ".xlsx", ".xls", ".png", ".jpg", ".jpeg", ".docx", ".txt", ".md"]
     if file_ext not in allowed_extensions:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

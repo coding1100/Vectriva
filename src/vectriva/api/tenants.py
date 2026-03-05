@@ -55,37 +55,44 @@ async def create_tenant(
     db: AsyncSession = Depends(get_db),
 ) -> TenantResponse:
     """Create a new tenant."""
-    tenant_id = str(uuid.uuid4())
-    tenant = Tenant(
-        id=tenant_id,
-        name=request.name,
-        timezone=request.timezone,
-    )
-    db.add(tenant)
+    try:
+        tenant_id = str(uuid.uuid4())
+        tenant = Tenant(
+            id=tenant_id,
+            name=request.name,
+            timezone=request.timezone,
+        )
+        db.add(tenant)
 
-    tenant_user = TenantUser(
-        id=str(uuid.uuid4()),
-        tenant_id=tenant_id,
-        user_id=user.id,
-        role="owner",
-    )
-    db.add(tenant_user)
+        tenant_user = TenantUser(
+            id=str(uuid.uuid4()),
+            tenant_id=tenant_id,
+            user_id=user.id,
+            role="owner",
+        )
+        db.add(tenant_user)
 
-    config = TenantConfig(
-        id=str(uuid.uuid4()),
-        tenant_id=tenant_id,
-    )
-    db.add(config)
+        config = TenantConfig(
+            id=str(uuid.uuid4()),
+            tenant_id=tenant_id,
+        )
+        db.add(config)
 
-    await db.commit()
+        await db.commit()
 
-    return TenantResponse(
-        id=tenant.id,
-        name=tenant.name,
-        timezone=tenant.timezone,
-        is_active=tenant.is_active,
-        created_at=tenant.created_at,
-    )
+        return TenantResponse(
+            id=tenant.id,
+            name=tenant.name,
+            timezone=tenant.timezone,
+            is_active=tenant.is_active,
+            created_at=tenant.created_at,
+        )
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 
 @router.get("/{tenant_id}/config", response_model=TenantConfigResponse)

@@ -4,9 +4,13 @@ import asyncio
 from collections.abc import AsyncGenerator
 
 import pytest
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
+from src.vectriva.api.main import app
+from src.vectriva.core.database import get_db
 from src.vectriva.models.database import Base
 
 
@@ -18,13 +22,16 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def test_engine():
     """Create test database engine."""
     engine = create_async_engine("postgresql+asyncpg://postgres:postgres@localhost/vectriva_test")
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        pytest.skip(f"Database connection failed, skipping tests: {e}")
 
     yield engine
 
@@ -34,7 +41,7 @@ async def test_engine():
     await engine.dispose()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     """Create test database session."""
     async_session = sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
@@ -42,3 +49,13 @@ async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
         yield session
         await session.rollback()
+
+@pytest_asyncio.fixture
+async def client(db_session) -> AsyncGenerator[AsyncClient, None]:
+    """Create an async test client for FastAPI."""
+    app.dependency_overrides[get_db] = lambda: db_session
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        yield ac
+    app.dependency_overrides.clear()
