@@ -27,9 +27,9 @@ class Settings(BaseSettings):
 
     # LLM Provider (default)
     default_llm_provider: str = "gemini"  # "openai" or "gemini"
-    default_llm_model: str = "gemini-1.5-pro"
+    default_llm_model: str = "gemini-2.0-flash"
     default_embedding_provider: str = "gemini"  # "openai" or "gemini"
-    default_embedding_model: str = "models/text-embedding-004"
+    default_embedding_model: str = "models/gemini-embedding-001"
 
     # OpenAI
     openai_api_key: str = ""
@@ -38,8 +38,8 @@ class Settings(BaseSettings):
 
     # Gemini (Google AI)
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-1.5-pro"
-    gemini_embedding_model: str = "models/text-embedding-004"
+    gemini_model: str = "gemini-2.0-flash"
+    gemini_embedding_model: str = "models/gemini-embedding-001"
 
     # Google Calendar
     google_client_id: str = ""

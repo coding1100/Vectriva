@@ -88,8 +88,10 @@ class LLMFactory:
             "text-embedding-3-large": 3072,
             "text-embedding-ada-002": 1536,
             # Gemini
+            "text-embedding-004": 768,
             "models/text-embedding-004": 768,
-            "models/embedding-001": 768,
+            "embedding-001": 768,
+            "models/gemini-embedding-001": 768,
         }
         return dimensions.get(model, 768)
 

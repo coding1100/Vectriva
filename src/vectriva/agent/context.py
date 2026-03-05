@@ -76,7 +76,7 @@ class AgentContext:
             "customer_id": self.customer_id,
             "current_state": self.current_state,
             "turn_count": self.turn_count,
-            "messages": [msg.model_dump() for msg in self.messages],
+            "messages": [msg.model_dump(mode="json") for msg in self.messages],
             "last_intent": self.last_intent,
             "intent_history": self.intent_history,
             "booking_flow_active": self.booking_flow_active,
@@ -84,7 +84,7 @@ class AgentContext:
             "preferred_time_range": (
                 self.preferred_time_range.model_dump() if self.preferred_time_range else None
             ),
-            "selected_slot": self.selected_slot.model_dump() if self.selected_slot else None,
+            "selected_slot": self.selected_slot.model_dump(mode="json") if self.selected_slot else None,
             "pending_event_id": self.pending_event_id,
             "is_escalated": self.is_escalated,
             "escalation_reason": self.escalation_reason,

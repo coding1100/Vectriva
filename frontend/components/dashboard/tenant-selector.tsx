@@ -23,12 +23,11 @@ export function TenantSelector() {
     setIsMounted(true);
   }, []);
 
-  const { data: tenantsData, isLoading } = useListTenantsApiTenantsGet({
+  const { data: tenants, isLoading } = useListTenantsApiTenantsGet({
     query: {
       enabled: isMounted
     }
   });
-  const tenants = tenantsData?.data;
 
   const handleTenantChange = (newTenantId: string) => {
     if (newTenantId === "create") {

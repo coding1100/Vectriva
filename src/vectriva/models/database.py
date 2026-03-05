@@ -95,9 +95,9 @@ class TenantConfig(Base):
 
     # Model Configuration
     llm_provider = Column(Enum("openai", "gemini", name="llm_provider"), default="gemini")
-    llm_model = Column(String, default="gemini-1.5-pro")
+    llm_model = Column(String, default="gemini-2.0-flash")
     embedding_provider = Column(Enum("openai", "gemini", name="embedding_provider"), default="gemini")
-    embedding_model = Column(String, default="models/text-embedding-004")
+    embedding_model = Column(String, default="models/gemini-embedding-001")
 
     # Business Hours (stored as JSON)
     business_hours = Column(JSON, default=list)

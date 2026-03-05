@@ -47,12 +47,11 @@ export default function APIKeysPage() {
     setIsMounted(true);
   }, []);
 
-  const { data: apiKeysData, isLoading } = useListApiKeysApiTenantsTenantIdApiKeysGet(tenantId, {
+  const { data: apiKeys, isLoading } = useListApiKeysApiTenantsTenantIdApiKeysGet(tenantId, {
     query: {
       enabled: isMounted
     }
   });
-  const apiKeys = apiKeysData?.data;
 
   const createMutation = useCreateApiKeyApiTenantsTenantIdApiKeysPost({
     mutation: {
@@ -60,7 +59,7 @@ export default function APIKeysPage() {
         queryClient.invalidateQueries({
           queryKey: getListApiKeysApiTenantsTenantIdApiKeysGetQueryKey(tenantId),
         });
-        setNewKey(response.data.key || null);
+        setNewKey(response.key || null);
         setKeyName("");
       },
     }

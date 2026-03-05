@@ -61,8 +61,8 @@ async def list_model_providers() -> list[ModelProvider]:
             description="Gemini 1.5 Pro and Flash models from Google",
             available_models=[
                 ModelInfo(
-                    id="gemini-1.5-pro",
-                    name="Gemini 1.5 Pro",
+                    id="gemini-2.0-flash",
+                    name="Gemini 2.0 Flash",
                     context_window=2000000,
                     cost_per_1k_tokens=0.00125,
                 ),
@@ -102,8 +102,8 @@ async def list_embedding_models() -> list[dict[str, str | int]]:
         },
         {
             "provider": "gemini",
-            "model_id": "models/text-embedding-004",
-            "name": "Gemini Embedding 004 (768 dims)",
+            "model_id": "models/gemini-embedding-001",
+            "name": "Gemini Embedding 001 (768 dims)",
             "dimensions": 768,
         },
     ]

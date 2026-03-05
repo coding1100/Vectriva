@@ -36,14 +36,14 @@ export default function DocumentsPage() {
     setIsMounted(true);
   }, []);
 
-  const { data: documentsData, isLoading } = useListDocumentsApiTenantsTenantIdDocumentsGet(
+  const { data: documents, isLoading } = useListDocumentsApiTenantsTenantIdDocumentsGet(
     tenantId,
     {
       query: {
         enabled: isMounted,
         refetchInterval: (query) => {
-          const docs = query.state.data?.data;
-          if (docs?.some((d) => d.status === "queued" || d.status === "processing")) {
+          const docs = query.state.data;
+          if (Array.isArray(docs) && docs.some((d) => d.status === "queued" || d.status === "processing")) {
             return 3000;
           }
           return false;
@@ -51,16 +51,14 @@ export default function DocumentsPage() {
       }
     }
   );
-  const documents = documentsData?.data;
 
-  const { data: chunksData, isLoading: chunksLoading } = useGetDocumentChunksApiTenantsTenantIdDocumentsDocumentIdChunksGet(
+  const { data: chunks, isLoading: chunksLoading } = useGetDocumentChunksApiTenantsTenantIdDocumentsDocumentIdChunksGet(
     tenantId,
     expandedDoc || "",
     {
       query: { enabled: isMounted && !!expandedDoc }
     }
   );
-  const chunks = chunksData?.data;
 
   const deleteMutation = useDeleteDocumentApiTenantsTenantIdDocumentsDocumentIdDelete({
     mutation: {

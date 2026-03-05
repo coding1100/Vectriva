@@ -1,9 +1,11 @@
 """Document processing worker for ingestion pipeline."""
 
+import logging
 import uuid
 from pathlib import Path
 from typing import Any
 
+import docx2txt
 from langchain_community.document_loaders import PyPDFLoader, UnstructuredExcelLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from PIL import Image
@@ -13,6 +15,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..core.config import settings
 from ..models.database import Document, DocumentChunk, TenantConfig
 from ..services.llm_factory import get_tenant_embeddings
+
+logger = logging.getLogger(__name__)
 
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,
@@ -51,6 +55,10 @@ async def process_document(db: AsyncSession, document_id: str) -> None:
             chunks_to_create = await _process_excel(file_path, document, embeddings)
         elif file_ext in [".png", ".jpg", ".jpeg"]:
             chunks_to_create = await _process_image(file_path, document, embeddings)
+        elif file_ext == ".docx":
+            chunks_to_create = await _process_docx(file_path, document, embeddings)
+        elif file_ext in [".txt", ".md"]:
+            chunks_to_create = await _process_text(file_path, document, embeddings)
         else:
             raise ValueError(f"Unsupported file type: {file_ext}")
 
@@ -149,3 +157,54 @@ async def _process_image(file_path: Path, document: Document, embeddings: Any) -
             },
         }
     ]
+
+
+async def _process_docx(file_path: Path, document: Document, embeddings: Any) -> list[dict]:
+    """Process Word document (.docx)."""
+    text = docx2txt.process(str(file_path))
+
+    if not text or not text.strip():
+        raise ValueError(f"No text content extracted from {document.name}")
+
+    chunks = text_splitter.split_text(text)
+    logger.info("Extracted %d chunks from docx: %s", len(chunks), document.name)
+
+    results = []
+    for chunk_text in chunks:
+        embedding = await embeddings.aembed_query(chunk_text)
+        results.append(
+            {
+                "content": chunk_text,
+                "type": "text",
+                "embedding": embedding,
+                "metadata": {"source": "docx"},
+            }
+        )
+
+    return results
+
+
+async def _process_text(file_path: Path, document: Document, embeddings: Any) -> list[dict]:
+    """Process plain text or markdown files (.txt, .md)."""
+    text = file_path.read_text(encoding="utf-8")
+
+    if not text or not text.strip():
+        raise ValueError(f"No text content in {document.name}")
+
+    chunks = text_splitter.split_text(text)
+    file_ext = file_path.suffix.lower().lstrip(".")
+    logger.info("Extracted %d chunks from %s: %s", len(chunks), file_ext, document.name)
+
+    results = []
+    for chunk_text in chunks:
+        embedding = await embeddings.aembed_query(chunk_text)
+        results.append(
+            {
+                "content": chunk_text,
+                "type": "text",
+                "embedding": embedding,
+                "metadata": {"source": file_ext},
+            }
+        )
+
+    return results

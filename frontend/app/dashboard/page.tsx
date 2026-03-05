@@ -8,8 +8,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
 
-  const { data: tenantsData } = useListTenantsApiTenantsGet();
-  const tenants = tenantsData?.data;
+  const { data: tenants } = useListTenantsApiTenantsGet();
 
   useEffect(() => {
     setIsMounted(true);

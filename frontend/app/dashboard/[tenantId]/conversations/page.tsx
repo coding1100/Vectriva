@@ -34,7 +34,7 @@ export default function ConversationsPage() {
     setIsMounted(true);
   }, []);
 
-  const { data: conversationsData, isLoading } = useListConversationsApiTenantsTenantIdConversationsGet(
+  const { data: conversations, isLoading } = useListConversationsApiTenantsTenantIdConversationsGet(
     tenantId,
     { page, page_size: pageSize },
     {
@@ -43,28 +43,24 @@ export default function ConversationsPage() {
       }
     }
   );
-  const conversations = conversationsData?.data;
 
-  const { data: detailData } = useGetConversationApiTenantsTenantIdConversationsConversationIdGet(
+  const { data: detail } = useGetConversationApiTenantsTenantIdConversationsConversationIdGet(
     tenantId,
     selectedConv || "",
     { query: { enabled: isMounted && !!selectedConv } }
   );
-  const detail = detailData?.data;
 
-  const { data: toolCallsData } = useGetToolCallsApiTenantsTenantIdConversationsConversationIdToolCallsGet(
+  const { data: toolCalls } = useGetToolCallsApiTenantsTenantIdConversationsConversationIdToolCallsGet(
     tenantId,
     selectedConv || "",
     { query: { enabled: isMounted && !!selectedConv } }
   );
-  const toolCalls = toolCallsData?.data;
 
-  const { data: retrievalsData } = useGetRetrievalsApiTenantsTenantIdConversationsConversationIdRetrievalsGet(
+  const { data: retrievals } = useGetRetrievalsApiTenantsTenantIdConversationsConversationIdRetrievalsGet(
     tenantId,
     selectedConv || "",
     { query: { enabled: isMounted && !!selectedConv } }
   );
-  const retrievals = retrievalsData?.data;
 
   if (!isMounted) return null;
 

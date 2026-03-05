@@ -34,7 +34,7 @@ export default function IntegrationsPage() {
     setIsMounted(true);
   }, []);
 
-  const { data: statusData, isLoading } = useGetGoogleIntegrationStatusApiTenantsTenantIdIntegrationsGoogleStatusGet(
+  const { data: status, isLoading } = useGetGoogleIntegrationStatusApiTenantsTenantIdIntegrationsGoogleStatusGet(
     tenantId,
     {
       query: {
@@ -42,19 +42,17 @@ export default function IntegrationsPage() {
       }
     }
   );
-  const status = statusData?.data;
 
-  const { data: calendarsData } = useListGoogleCalendarsApiTenantsTenantIdIntegrationsGoogleCalendarsGet(
+  const { data: calendars } = useListGoogleCalendarsApiTenantsTenantIdIntegrationsGoogleCalendarsGet(
     tenantId,
     { query: { enabled: isMounted && (status?.connected || false) } }
   );
-  const calendars = calendarsData?.data;
 
   const handleConnect = async () => {
     try {
       const response = await getGoogleAuthUrlApiTenantsTenantIdIntegrationsGoogleAuthUrlGet(tenantId);
-      if (response.data.auth_url) {
-        window.location.href = response.data.auth_url;
+      if (response.auth_url) {
+        window.location.href = response.auth_url;
       }
     } catch (e) {
       console.error(e);

@@ -1,7 +1,7 @@
 """Retry logic and error handling utilities."""
 
 import asyncio
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Literal, TypeVar
 
 import structlog
 

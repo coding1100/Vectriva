@@ -76,17 +76,11 @@ export default function CreateTenantPage() {
   const createMutation = useCreateTenantApiTenantsPost({
     mutation: {
       onSuccess: (response) => {
-        if (response && response.data && response.data.id) {
-            router.push(`/dashboard/${response.data.id}/documents`);
+        const tenantId = (response as any)?.id;
+        if (tenantId) {
+          router.push(`/dashboard/${tenantId}/documents`);
         } else {
-            // It seems response isn't formatted as expected, probably due to axios unwrapping
-            // Try to extract from the root or navigate to the dashboard root
-            const tenantId = (response as any)?.id;
-            if (tenantId) {
-                router.push(`/dashboard/${tenantId}/documents`);
-            } else {
-                router.push("/dashboard");
-            }
+          router.push("/dashboard");
         }
       },
       onError: (err: any) => {
