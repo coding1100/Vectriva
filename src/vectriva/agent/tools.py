@@ -54,8 +54,8 @@ class CreateEventOutput(BaseModel):
     """Output schema for event creation."""
 
     event_id: str
-    meet_link: HttpUrl
-    calendar_link: HttpUrl
+    meet_link: str = ""
+    calendar_link: str = ""
     start_time: datetime
     end_time: datetime
 
@@ -79,7 +79,7 @@ class RescheduleEventOutput(BaseModel):
     event_id: str
     old_time: TimeSlot
     new_time: TimeSlot
-    meet_link: HttpUrl
+    meet_link: str = ""
 
 
 # ============================================================================

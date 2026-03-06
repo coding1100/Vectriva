@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Send, Minimize2, MessageCircle, X } from "lucide-react";
+import { Send, Minimize2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import type { ChatResponse } from "@/lib/types";
 
 interface Message {
   role: "user" | "assistant";
@@ -24,8 +23,18 @@ function EmbedWidgetContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState("#3B82F6");
-  const [welcomeMessage, setWelcomeMessage] = useState("Hi! How can I help you today?");
+  const [welcomeMessage, setWelcomeMessage] = useState(
+    "Hi! How can I help you today?"
+  );
+  const [customerTimezone, setCustomerTimezone] = useState("UTC");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamingContentRef = useRef("");
+
+  useEffect(() => {
+    const detected =
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    setCustomerTimezone(detected);
+  }, []);
 
   useEffect(() => {
     const color = searchParams.get("color");
@@ -50,8 +59,8 @@ function EmbedWidgetContent() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || !apiKey) return;
+  const handleSend = useCallback(async () => {
+    if (!input.trim() || !apiKey || isLoading) return;
 
     const userMessage: Message = {
       role: "user",
@@ -62,36 +71,70 @@ function EmbedWidgetContent() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    streamingContentRef.current = "";
+
+    const placeholderMsg: Message = {
+      role: "assistant",
+      content: "",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, placeholderMsg]);
 
     try {
-      const response = await api.chatWithKey(
+      await api.chatStreamWithKey(
         apiKey,
         input,
-        conversationId || undefined
+        {
+          onStart: (convId) => {
+            if (!conversationId) {
+              setConversationId(convId);
+            }
+          },
+          onToken: (token) => {
+            streamingContentRef.current += token;
+            const currentContent = streamingContentRef.current;
+            setMessages((prev) => {
+              const updated = [...prev];
+              updated[updated.length - 1] = {
+                ...updated[updated.length - 1],
+                content: currentContent,
+              };
+              return updated;
+            });
+          },
+          onDone: (_convId, _isEscalated) => {
+            // Streaming complete
+          },
+          onError: (error) => {
+            console.error("Stream error:", error);
+            setMessages((prev) => {
+              const updated = [...prev];
+              updated[updated.length - 1] = {
+                ...updated[updated.length - 1],
+                content:
+                  "Sorry, I encountered an error. Please try again.",
+              };
+              return updated;
+            });
+          },
+        },
+        conversationId || undefined,
+        customerTimezone
       );
-
-      if (!conversationId) {
-        setConversationId(response.conversation_id);
-      }
-
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: response.message,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
-      const errorMessage: Message = {
-        role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      console.error("Stream failed:", err);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          ...updated[updated.length - 1],
+          content: "Sorry, I encountered an error. Please try again.",
+        };
+        return updated;
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [input, apiKey, isLoading, conversationId, customerTimezone]);
 
   if (!isOpen) {
     return (
@@ -147,32 +190,36 @@ function EmbedWidgetContent() {
                 }
               >
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                <p className="text-xs opacity-70 mt-1">
-                  {msg.timestamp.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
+                {msg.content && (
+                  <p className="text-xs opacity-70 mt-1">
+                    {msg.timestamp.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                )}
               </div>
             </div>
           ))}
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="max-w-[80%] rounded-lg bg-muted px-4 py-2">
-                <div className="flex gap-1">
-                  <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400"></div>
-                  <div
-                    className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
-                    style={{ animationDelay: "0.1s" }}
-                  ></div>
-                  <div
-                    className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
+          {isLoading &&
+            messages.length > 0 &&
+            !messages[messages.length - 1].content && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] rounded-lg bg-muted px-4 py-2">
+                  <div className="flex gap-1">
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400"></div>
+                    <div
+                      className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                      style={{ animationDelay: "0.1s" }}
+                    ></div>
+                    <div
+                      className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
           <div ref={messagesEndRef} />
         </div>
 
@@ -207,7 +254,11 @@ function EmbedWidgetContent() {
 
 export default function EmbedWidget() {
   return (
-    <Suspense fallback={<div className="fixed bottom-4 right-4 z-50">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="fixed bottom-4 right-4 z-50">Loading...</div>
+      }
+    >
       <EmbedWidgetContent />
     </Suspense>
   );

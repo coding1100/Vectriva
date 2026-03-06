@@ -49,3 +49,5 @@ htmlcov/
 
 # Alembic
 alembic/versions/*.pyc
+
+creds.json

@@ -38,6 +38,7 @@ dependencies = [
     "docx2txt>=0.8",
     "tenacity>=9.0.0",
     "structlog>=24.4.0",
+    "pytz>=2024.1",
     "python-dotenv>=1.0.1",
 ]
 

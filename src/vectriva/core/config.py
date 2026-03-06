@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     gemini_embedding_model: str = "models/gemini-embedding-001"
 
     # Google Calendar
+    google_service_account_path: str = ""
     google_client_id: str = ""
     google_client_secret: str = ""
     google_redirect_uri: str = "http://localhost:8000/api/integrations/google/callback"

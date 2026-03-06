@@ -125,22 +125,40 @@ async def list_google_calendars(
     creds = await get_calendar_credentials(db, tenant.id)
     service = build("calendar", "v3", credentials=creds)
 
+    calendars = []
     try:
+        # Get the standard list of calendars
         calendar_list = service.calendarList().list().execute()
+        for cal in calendar_list.get("items", []):
+            calendars.append(
+                GoogleCalendarInfo(
+                    id=cal["id"],
+                    summary=cal.get("summary", "Unnamed Calendar"),
+                    primary=cal.get("primary", False),
+                )
+            )
+            
+        # If the list is empty (common for service accounts), try to get primary directly
+        if not calendars:
+            try:
+                primary = service.calendars().get(calendarId="primary").execute()
+                calendars.append(
+                    GoogleCalendarInfo(
+                        id=primary["id"],
+                        summary=primary.get("summary", "Service Account Primary"),
+                        primary=True,
+                    )
+                )
+            except Exception:
+                pass
+                
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch calendars: {e}",
         )
-
-    calendars = [
-        GoogleCalendarInfo(
-            id=cal["id"],
-            summary=cal.get("summary", ""),
-            primary=cal.get("primary", False),
-        )
-        for cal in calendar_list.get("items", [])
-    ]
 
     return GoogleCalendarsResponse(calendars=calendars)
 
@@ -175,6 +193,45 @@ async def get_google_integration_status(
     tenant: Tenant = Depends(get_current_tenant), db: AsyncSession = Depends(get_db)
 ) -> IntegrationStatusResponse:
     """Get Google Calendar integration status."""
+    from ..services.calendar_service import _get_service_account_credentials
+    
+    result = await db.execute(
+        select(Integration).where(
+            Integration.tenant_id == tenant.id, Integration.provider == "google_calendar"
+        )
+    )
+    integration = result.scalar_one_or_none()
+
+    # Check if we have service account credentials
+    sa_creds = _get_service_account_credentials()
+
+    if not integration and not sa_creds:
+        return IntegrationStatusResponse(connected=False, calendar_id=None, calendar_name=None)
+
+    # If we have either integration OR sa_creds, we are "connected"
+    calendar_name = None
+    calendar_id = integration.calendar_id if integration else None
+    
+    if sa_creds and not calendar_id:
+        # Default to the service account primary if nothing explicitly set yet
+        calendar_id = "primary"
+        
+    return IntegrationStatusResponse(
+        connected=True,
+        calendar_id=calendar_id,
+        calendar_name=calendar_name,
+    )
+
+@router.put("/google/calendar")
+async def set_booking_calendar(
+    request: SetCalendarRequest,
+    tenant: Tenant = Depends(get_current_tenant),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    """Set the calendar to use for bookings."""
+    import uuid
+    from ..services.calendar_service import _get_service_account_credentials
+    
     result = await db.execute(
         select(Integration).where(
             Integration.tenant_id == tenant.id, Integration.provider == "google_calendar"
@@ -183,13 +240,27 @@ async def get_google_integration_status(
     integration = result.scalar_one_or_none()
 
     if not integration:
-        return IntegrationStatusResponse(connected=False, calendar_id=None, calendar_name=None)
+        # If no integration exists, but we have SA creds, create the integration record to store the calendar_id
+        sa_creds = _get_service_account_credentials()
+        if not sa_creds:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Google Calendar not connected"
+            )
+            
+        integration = Integration(
+            id=str(uuid.uuid4()),
+            tenant_id=tenant.id,
+            provider="google_calendar",
+            calendar_id=request.calendar_id,
+            encrypted_access_token="service_account",
+        )
+        db.add(integration)
+    else:
+        integration.calendar_id = request.calendar_id
+        
+    await db.commit()
 
-    return IntegrationStatusResponse(
-        connected=True,
-        calendar_id=integration.calendar_id,
-        calendar_name=None,
-    )
+    return {"status": "success", "calendar_id": request.calendar_id}
 
 
 @router.delete("/google", status_code=status.HTTP_204_NO_CONTENT)
